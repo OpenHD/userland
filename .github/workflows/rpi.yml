@@ -46,6 +46,16 @@ jobs:
             make -j4
             sudo make install
             cd ..
+            rm -Rf /opt/vc/src
+            rm -Rf /opt/vc/man
+            rm -Rf /opt/vc/include
+            mkdir -p /opt/vc/usr/local/bin/
+            cp -r /opt/vc/bin/hello_video.bin /opt/vc/usr/local/bin/
+            rm -Rf /opt/vc/bin
+            mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
+            cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
+            rm /opt/vc/lib
+            mv /opt/vc/lib2/ /opt/vc/lib/
             fpm -a armhf -s dir -t deb -n userland -v 2.3-evo -C /opt/vc -p userland.deb
             ls -a
 
