@@ -56,7 +56,7 @@ jobs:
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
             rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
-            fpm -a armhf -s dir -t deb -n userland -v 2.3-evo -C /opt/vc -p userland.deb
+            fpm -a armhf -s dir -t deb -n userland -v 2.3-evo -C /opt/vc -p userland.deb --after-install after-install.sh
             ls -a
 
     - name: Upload to Github
