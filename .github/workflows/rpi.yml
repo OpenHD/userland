@@ -39,6 +39,7 @@ jobs:
             cd /opt
             cd userland
             sudo apt update
+            bash install_dep.sh
             mkdir build
             cd build
             cmake ..
