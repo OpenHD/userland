@@ -44,6 +44,9 @@ jobs:
             cd build
             cmake ..
             make -j4
+            sudo make install
+            cd ..
+            fpm -a armhf -s dir -t deb -n userland -v 2.3-evo -C /opt/vc -p userland.deb
             ls -a
 
     - name: Upload to Github
