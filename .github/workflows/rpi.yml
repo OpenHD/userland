@@ -54,7 +54,7 @@ jobs:
             rm -Rf /opt/vc/bin
             mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
-            rm /opt/vc/lib
+            rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
             fpm -a armhf -s dir -t deb -n userland -v 2.3-evo -C /opt/vc -p userland.deb
             ls -a
