@@ -215,6 +215,8 @@ if (1) {
 
       ilclient_set_port_settings_callback(client, psc_callback, NULL);
 
+	 fprintf(stderr, "Initialization done - accepting data\n");
+
       while(status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL)
       {
          int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
@@ -250,6 +252,7 @@ if (1) {
       ilclient_flush_tunnels(tunnel, 0);
    }
 
+  fprintf(stderr, "Broke out of constant decode loop for whatever reason\n");
 
    ilclient_disable_tunnel(tunnel);
    ilclient_disable_tunnel(tunnel+1);

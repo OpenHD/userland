@@ -30,3 +30,5 @@ build/
 *.pts
 *.ppm
 *.mkv
+
+cmake-build-debug
