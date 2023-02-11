@@ -1,0 +1,11 @@
+[Unit]
+Description=OpenHD-Video
+After=openhd.service
+
+[Service]
+User=root
+ExecStart=/usr/local/bin/omx_video.sh
+
+
+[Install]
+WantedBy=multi-user.target

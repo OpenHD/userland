@@ -36,6 +36,8 @@ jobs:
         import_github_env: true
         commands: |
             ls -a
+            cp -Rf omx_video.service /opt/vc/
+            cp -Rf omx_video.sh /opt/vc/
             cd /opt
             cd userland
             sudo apt update
@@ -50,7 +52,12 @@ jobs:
             rm -Rf /opt/vc/man
             rm -Rf /opt/vc/include
             mkdir -p /opt/vc/usr/local/bin/
+            mkdir -p /opt/vc/etc/systemd/system
             cp -r /opt/vc/bin/hello_video.bin /opt/vc/usr/local/bin/
+            cp -r /opt/vc/omx_video.sh /opt/vc/usr/local/bin/
+            chmod +x /opt/vc/usr/local/bin/omx_video.sh
+            cp -r /opt/vc/omx_video.service /opt/vc/etc/systemd/system
+            chmod +x /opt/vc/etc/systemd/system/omx_video.service
             rm -Rf /opt/vc/bin
             mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
