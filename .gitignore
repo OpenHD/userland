@@ -32,3 +32,5 @@ build/
 *.mkv
 
 cmake-build-debug
+build
+.idea
