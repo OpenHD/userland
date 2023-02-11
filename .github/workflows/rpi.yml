@@ -36,8 +36,8 @@ jobs:
         import_github_env: true
         commands: |
             ls -a
-            cp -Rf omx_video.service /opt/vc/
-            cp -Rf omx_video.sh /opt/vc/
+            cp -Rf userland/omx_video.service /opt/vc/
+            cp -Rf userland/omx_video.sh /opt/vc/
             cd /opt
             cd userland
             sudo apt update
