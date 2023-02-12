@@ -44,16 +44,41 @@ extern "C" {
   (a).nVersion.s.nRevision = OMX_VERSION_REVISION; \
   (a).nVersion.s.nStep = OMX_VERSION_STEP
 
+static COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render = NULL;
+static  TUNNEL_T tunnel[4];
+static int status = 0;
+
+static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
+  //printf("got event %p %p %d\n", userdata, comp, data);
+
+  if (comp == video_decode && data == 131) {
+	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
+	  status = -1;
+	  fprintf(stderr, "ilclient_setup_tunnel0 failed\n");
+	  return;
+	}
+
+	ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
+
+	// now setup tunnel to video_render
+	if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
+	  status = -1;
+	  fprintf(stderr, "ilclient_setup_tunnel1 failed\n");
+	  return;
+	}
+
+	ilclient_change_component_state(video_render, OMX_StateExecuting);
+  }
+}
+
 static int video_decode_test() {
   OMX_VIDEO_PARAM_PORTFORMATTYPE format;
   OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
-  COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render = NULL, *clock = NULL;
+  COMPONENT_T *clock = NULL;
   COMPONENT_T *list[5];
-  TUNNEL_T tunnel[4];
   ILCLIENT_T *client;
 
-  int status = 0;
 
   memset(list, 0, sizeof(list));
   memset(tunnel, 0, sizeof(tunnel));
@@ -180,29 +205,6 @@ static int video_decode_test() {
 		}
 	}
 #endif
-
-	void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
-	  //printf("got event %p %p %d\n", userdata, comp, data);
-
-	  if (comp == video_decode && data == 131) {
-		if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
-		  status = -1;
-		  fprintf(stderr, "ilclient_setup_tunnel0 failed\n");
-		  return;
-		}
-
-		ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
-
-		// now setup tunnel to video_render
-		if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
-		  status = -1;
-		  fprintf(stderr, "ilclient_setup_tunnel1 failed\n");
-		  return;
-		}
-
-		ilclient_change_component_state(video_render, OMX_StateExecuting);
-	  }
-	}
 
 	ilclient_set_port_settings_callback(client, psc_callback, NULL);
 
