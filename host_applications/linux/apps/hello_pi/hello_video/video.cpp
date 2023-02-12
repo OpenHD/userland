@@ -61,6 +61,7 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
 	fprintf(stderr,"got event decode port changed, changed_once%s\n",(changed_once ? "Y":"N"));
 	if(changed_once){
 	  terminate_and_let_service_restart= true;
+	  return;
 	}
 	changed_once= true;
 	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
