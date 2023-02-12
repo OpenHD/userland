@@ -220,9 +220,9 @@ read_data:
 
 	  fprintf(stderr, "Got video data %d\n",data_len);
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
-		fprintf(stderr, "Parsed NALU %d\n",in_nalu_c);
 		in_nalu_c++;
 		NALU nalu(buf->pBuffer,data_len);
+		fprintf(stderr, "Parsed NALU %d type:%d\n",in_nalu_c,nalu.get_nal_unit_type());
 		if(!m_keyframe_finder.check_is_still_same_config_data(nalu)){
 		  fprintf(stderr, "Detected changed sps / pps, restart\n");
 		  exit(-1);
