@@ -216,6 +216,7 @@ static int video_decode_test() {
 	  if (data_len <= 0) break;
 
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
+		fprintf(stderr, "Parsed NALU\n");
 		NALU nalu(buf->pBuffer,data_len);
 		if(!m_keyframe_finder.check_is_still_same_config_data(nalu)){
 		  fprintf(stderr, "Detected changed sps / pps, restart\n");
