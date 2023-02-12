@@ -269,7 +269,9 @@ static int video_decode_test() {
 	  buf->nOffset=0;
 	  buf->nFilledLen = 0;
 	  buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
+	  fprintf(stderr, "begin OMX_EmptyThisBuffer (EOS)\n");
 	  OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
+	  fprintf(stderr, "end OMX_EmptyThisBuffer (EOS)\n");
 	}
 
 	// need to flush the renderer to allow video_decode to disable its input port
