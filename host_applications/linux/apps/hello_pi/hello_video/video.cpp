@@ -304,6 +304,9 @@ static int video_decode_test() {
 
 int main(int argc, char **argv) {
   bcm_host_init();
-  return video_decode_test();
+  fprintf(stderr, "video_decode_test-begin\n");
+  int ret=video_decode_test();
+  fprintf(stderr, "video_decode_test-end\n");
+  return ret;
 }
 }
