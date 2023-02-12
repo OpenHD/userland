@@ -214,6 +214,7 @@ static int video_decode_test() {
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 read_data:
+	  fprintf(stderr, "Read video data\n");
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 
