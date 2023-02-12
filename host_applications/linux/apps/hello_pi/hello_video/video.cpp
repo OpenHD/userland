@@ -54,6 +54,7 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
 
   if (comp == video_decode && data == 131) {
+	fprintf(stderr,"got event decode port changed\n");
 	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
 	  status = -1;
 	  fprintf(stderr, "ilclient_setup_tunnel0 failed\n");
