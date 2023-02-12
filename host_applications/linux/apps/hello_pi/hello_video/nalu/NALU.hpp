@@ -126,6 +126,24 @@ public:
    }
 };
 
+static bool check_has_valid_prefix(bool use_4_bytes_start_code,const uint8_t* m_curr_nalu, int m_nalu_data_length){
+  if(m_nalu_data_length<5){
+	return false;
+  }
+  if(use_4_bytes_start_code){
+	const bool valid= m_curr_nalu[0]==0 &&
+		m_curr_nalu[1]==0 &&
+		m_curr_nalu[2]==0 &&
+		m_curr_nalu[3]==1;
+	return valid;
+  }else{
+	const bool valid= m_curr_nalu[0]==0 &&
+		m_curr_nalu[1]==0 &&
+		m_curr_nalu[2]==1;
+	return valid;
+  }
+}
+
 
 
 #endif //LIVE_VIDEO_10MS_ANDROID_NALU_H
