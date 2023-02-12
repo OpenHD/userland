@@ -228,7 +228,7 @@ static int video_decode_test() {
 	  if (data_len <= 0) break;
 
 	  if(terminate_and_let_service_restart){
-		fprintf(stderr, "Needs restart\n");
+		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
 		// Properly terminating hangs for whatever reason - just let the service restart
 		exit(0);
 		break;
