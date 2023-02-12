@@ -223,7 +223,7 @@ static int video_decode_test() {
 	fprintf(stderr, "Initialization done - accepting data\n");
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
-	  fprintf(stderr, "Read video data\n");
+	  //fprintf(stderr, "Read video data\n");
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 
@@ -234,8 +234,8 @@ static int video_decode_test() {
 		break;
 	  }
 
-	  fprintf(stderr, "Got video data %d\n",data_len);
-	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
+	  //fprintf(stderr, "Got video data %d\n",data_len);
+	  /*if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
 		in_nalu_c++;
 		NALU nalu(buf->pBuffer,data_len);
 		fprintf(stderr, "Parsed NALU %d type:%d\n",in_nalu_c,nalu.get_nal_unit_type());
@@ -245,9 +245,7 @@ static int video_decode_test() {
 		}
 	  }else{
 		fprintf(stderr, "Not a valid NALU %d\n",data_len);
-	  }
-	  //goto read_data;
-
+	  }*/
 
 	  buf->nFilledLen = data_len;
 	  buf->nOffset = 0;
@@ -258,13 +256,13 @@ static int video_decode_test() {
 	  } else
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
-	  fprintf(stderr, "Begin empty this buffer \n");
+	  //fprintf(stderr, "Begin empty this buffer \n");
 	  if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
 		status = -1;
 		fprintf(stderr, "OMX_EmptyThisBuffer failed\n");
 		break;
 	  }
-	  fprintf(stderr, "End empty this buffer \n");
+	  //fprintf(stderr, "End empty this buffer \n");
 	}
 
 	fprintf(stderr, "Broke out of constant decode loop for whatever reason\n");
