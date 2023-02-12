@@ -213,6 +213,7 @@ static int video_decode_test() {
 	fprintf(stderr, "Initialization done - accepting data\n");
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
+read_data:
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 
@@ -227,6 +228,7 @@ static int video_decode_test() {
 	  }else{
 		fprintf(stderr, "Not a valid NALU\n");
 	  }
+	  goto read_data;
 
 
 	  buf->nFilledLen = data_len;
