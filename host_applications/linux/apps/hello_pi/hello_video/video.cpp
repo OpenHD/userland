@@ -52,12 +52,16 @@ static int in_nalu_c=0;
 
 // Fixes "hanging" when user changes things like resolution on the fly
 static bool changed_once=false;
+static bool terminate_and_let_service_restart=false;
 
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
 
   if (comp == video_decode && data == 131) {
 	fprintf(stderr,"got event decode port changed, changed_once%s\n",(changed_once ? "Y":"N"));
+	if(changed_once){
+	  terminate_and_let_service_restart= true;
+	}
 	changed_once= true;
 	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
 	  status = -1;
@@ -218,10 +222,14 @@ static int video_decode_test() {
 	fprintf(stderr, "Initialization done - accepting data\n");
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
-read_data:
 	  fprintf(stderr, "Read video data\n");
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
+
+	  if(terminate_and_let_service_restart){
+		fprintf(stderr, "Needs restart\n");
+		break;
+	  }
 
 	  fprintf(stderr, "Got video data %d\n",data_len);
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
