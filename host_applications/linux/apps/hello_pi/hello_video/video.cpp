@@ -248,6 +248,7 @@ read_data:
 	  }
 	}
 
+	fprintf(stderr, "Done reading input from stdin\n");
 	if (buf != NULL) {
 	  buf->nFilledLen = 0;
 	  buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
