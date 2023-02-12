@@ -217,6 +217,7 @@ read_data:
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 
+	  fprintf(stderr, "Got video data %d\n",data_len);
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
 		fprintf(stderr, "Parsed NALU %d\n",in_nalu_c);
 		in_nalu_c++;
@@ -226,7 +227,7 @@ read_data:
 		  exit(-1);
 		}
 	  }else{
-		fprintf(stderr, "Not a valid NALU\n");
+		fprintf(stderr, "Not a valid NALU %d\n",data_len);
 	  }
 	  //goto read_data;
 
