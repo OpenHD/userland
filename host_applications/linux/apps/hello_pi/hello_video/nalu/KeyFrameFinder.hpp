@@ -38,7 +38,7 @@ public:
     // true otherwise
     bool check_is_still_same_config_data(const NALU &nalu){
 	  if(!allKeyFramesAvailable()){
-		saveIfKeyFrame(nalu);
+		//saveIfKeyFrame(nalu);
 		return true;
 	  }
 	  if(nalu.isSPS()){
