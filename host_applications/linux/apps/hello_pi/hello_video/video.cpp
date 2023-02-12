@@ -219,7 +219,7 @@ static int video_decode_test() {
 		NALU nalu(buf->pBuffer,data_len);
 		if(!m_keyframe_finder.check_is_still_same_config_data(nalu)){
 		  fprintf(stderr, "Detected changed sps / pps, restart\n");
-		  status=1;
+		  exit(-1);
 		}
 	  }
 
