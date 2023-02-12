@@ -37,13 +37,16 @@ public:
     // returns false if the config data (SPS,PPS,optional VPS) has changed
     // true otherwise
     bool check_is_still_same_config_data(const NALU &nalu){
-	  if(!allKeyFramesAvailable())return true;
-        if(nalu.isSPS()){
-            return compare(nalu,*SPS);
-        }else if(nalu.isPPS()){
-            return compare(nalu,*PPS);
-        }
-        return true;
+	  if(!allKeyFramesAvailable()){
+		saveIfKeyFrame(nalu);
+		return true;
+	  }
+	  if(nalu.isSPS()){
+		return compare(nalu,*SPS);
+	  }else if(nalu.isPPS()){
+		return compare(nalu,*PPS);
+	  }
+	  return true;
     }
     //SPS
     const NALU& getCSD0()const{
