@@ -266,6 +266,7 @@ static int video_decode_test() {
 
 	fprintf(stderr, "Done reading input from stdin\n");
 	if (buf != NULL) {
+	  buf->nOffset=0;
 	  buf->nFilledLen = 0;
 	  buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
 	  OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
