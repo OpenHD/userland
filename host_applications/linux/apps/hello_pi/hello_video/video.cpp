@@ -228,7 +228,7 @@ read_data:
 	  }else{
 		fprintf(stderr, "Not a valid NALU\n");
 	  }
-	  goto read_data;
+	  //goto read_data;
 
 
 	  buf->nFilledLen = data_len;
