@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <util/mmal_il.h>
 
 /* Define this to 1 if you want to log all buffer transfers */
-#define ENABLE_MMAL_EXTRA_LOGGING 1
+#define ENABLE_MMAL_EXTRA_LOGGING 0
 
 #ifndef MMALOMX_EXPORT
 #  define MMALOMX_EXPORT(a) a
