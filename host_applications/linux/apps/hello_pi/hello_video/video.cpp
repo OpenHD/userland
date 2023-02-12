@@ -51,7 +51,7 @@ static int status = 0;
 static int in_nalu_c=0;
 
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
-  //printf("got event %p %p %d\n", userdata, comp, data);
+  fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
 
   if (comp == video_decode && data == 131) {
 	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
