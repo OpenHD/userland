@@ -242,11 +242,13 @@ read_data:
 	  } else
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
+	  fprintf(stderr, "Begin empty this buffer \n");
 	  if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
 		status = -1;
 		fprintf(stderr, "OMX_EmptyThisBuffer failed\n");
 		break;
 	  }
+	  fprintf(stderr, "End empty this buffer \n");
 	}
 
 	fprintf(stderr, "Done reading input from stdin\n");
