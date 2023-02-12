@@ -222,6 +222,8 @@ static int video_decode_test() {
 		  fprintf(stderr, "Detected changed sps / pps, restart\n");
 		  exit(-1);
 		}
+	  }else{
+		fprintf(stderr, "Not a valid NALU\n");
 	  }
 
 
