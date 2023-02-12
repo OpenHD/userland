@@ -72,8 +72,8 @@ static int video_decode_test() {
   // create video_decode
   if (ilclient_create_component(client,
 								&video_decode,
-								"video_decode",
-								ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS) != 0) {
+								(char*)"video_decode",
+								(ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
 	fprintf(stderr, "video_decode create failed\n");
 	return -1;
   }
@@ -98,7 +98,7 @@ static int video_decode_test() {
 	configDisplay.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_TRANSFORM | OMX_DISPLAY_SET_LAYER | OMX_DISPLAY_SET_NUM);
 	configDisplay.num = 0;
 	configDisplay.layer = -128;
-	configDisplay.transform = 0;
+	configDisplay.transform = (OMX_DISPLAYTRANSFORMTYPE)0;
 
 	if (OMX_SetConfig(ILC_GET_HANDLE(video_render), OMX_IndexConfigDisplayRegion, &configDisplay) != OMX_ErrorNone)
 	  status = -15;
