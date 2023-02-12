@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#include "nalu/NALU.hpp"
 
-//extern "C" {
+extern "C" {
 
 #define OMX_INIT_STRUCTURE(a) \
   memset(&(a), 0, sizeof(a)); \
@@ -261,4 +261,4 @@ int main(int argc, char **argv) {
   bcm_host_init();
   return video_decode_test();
 }
-//}
+}
