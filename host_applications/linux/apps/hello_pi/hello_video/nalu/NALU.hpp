@@ -17,7 +17,6 @@
 #include <optional>
 #include <assert.h>
 #include <memory>
-#include <optional>
 
 #include "NALUnitType.hpp"
 
@@ -36,7 +35,7 @@ public:
     using NALU_BUFFER=std::array<uint8_t,NALU_MAXLEN>;
     // Copy constructor allocates new buffer for data (heavy)
     NALU(const NALU& nalu):
-    ownedData(std::vector<uint8_t>(nalu.getData(),nalu.getData()+nalu.getSize())),
+    ownedData(std::make_unique<std::vector<uint8_t>>(nalu.getData(),nalu.getData()+nalu.getSize())),
     m_data(ownedData->data()),m_data_len(nalu.getSize()),IS_H265_PACKET(nalu.IS_H265_PACKET),creationTime(nalu.creationTime){
         //MLOGD<<"NALU copy constructor";
         m_nalu_prefix_size=get_nalu_prefix_size();
@@ -63,7 +62,7 @@ private:
     // With the default constructor a NALU does not own its memory. This saves us one memcpy. However, storing a NALU after the lifetime of the
     // Non-owned memory expired is also needed in some places, so the copy-constructor creates a copy of the non-owned data and stores it in a optional buffer
     // WARNING: Order is important here (Initializer list). Declare before data pointer
-    const std::optional<std::vector<uint8_t>> ownedData={};
+    const std::unique_ptr<std::vector<uint8_t>> ownedData=nullptr;
     const uint8_t* m_data;
     const size_t m_data_len;
     int m_nalu_prefix_size;

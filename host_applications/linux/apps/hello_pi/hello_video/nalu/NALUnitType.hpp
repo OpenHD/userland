@@ -1,11 +1,10 @@
 //
 // Created by consti10 on 11.11.20.
 //
-
-#include <string>
-
 #ifndef LIVEVIDEO10MS_NALUNITTYPE_H
 #define LIVEVIDEO10MS_NALUNITTYPE_H
+
+#include <string>
 
 // h264 types come from h264_stream
 // h265 types are declared here
