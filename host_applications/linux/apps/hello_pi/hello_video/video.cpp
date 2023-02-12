@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "nalu/KeyFrameFinder.hpp"
 
+static KeyFrameFinder m_keyframe_finder{};
+
 extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
