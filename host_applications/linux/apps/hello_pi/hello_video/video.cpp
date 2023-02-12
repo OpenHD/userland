@@ -228,6 +228,8 @@ static int video_decode_test() {
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart\n");
+		// Properly terminating hangs for whatever reason - just let the service restart
+		exit(0);
 		break;
 	  }
 
