@@ -50,11 +50,15 @@ static  TUNNEL_T tunnel[4];
 static int status = 0;
 static int in_nalu_c=0;
 
+// Fixes "hanging" when user changes things like resolution on the fly
+static bool changed_once=false;
+
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
 
   if (comp == video_decode && data == 131) {
-	fprintf(stderr,"got event decode port changed\n");
+	fprintf(stderr,"got event decode port changed, changed_once%s\n",(changed_once ? "Y":"N"));
+	changed_once= true;
 	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
 	  status = -1;
 	  fprintf(stderr, "ilclient_setup_tunnel0 failed\n");
