@@ -229,7 +229,7 @@ static int video_decode_test() {
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart\n");
 		// Properly terminating hangs for whatever reason - just let the service restart
-		exit(0);
+		//exit(0);
 		break;
 	  }
 
@@ -266,8 +266,10 @@ static int video_decode_test() {
 	  fprintf(stderr, "End empty this buffer \n");
 	}
 
-	fprintf(stderr, "Done reading input from stdin\n");
-	if (buf != NULL) {
+	fprintf(stderr, "Broke out of constant decode loop for whatever reason\n");
+
+	// This hangs for whatever reason
+	if (buf != NULL && false) {
 	  buf->nOffset=0;
 	  buf->nFilledLen = 0;
 	  buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
@@ -276,11 +278,11 @@ static int video_decode_test() {
 	  fprintf(stderr, "end OMX_EmptyThisBuffer (EOS)\n");
 	}
 
+	fprintf(stderr, "ilclient_flush_tunnels\n");
 	// need to flush the renderer to allow video_decode to disable its input port
 	ilclient_flush_tunnels(tunnel, 0);
+	fprintf(stderr, "ilclient_flush_tunnels end\n");
   }
-
-  fprintf(stderr, "Broke out of constant decode loop for whatever reason\n");
 
   ilclient_disable_tunnel(tunnel);
   ilclient_disable_tunnel(tunnel + 1);
