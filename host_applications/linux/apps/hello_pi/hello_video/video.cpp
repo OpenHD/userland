@@ -25,7 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
-#include "nalu/NALU.hpp"
+#include "nalu/KeyFrameFinder.hpp"
 
 extern "C" {
 #include <stdio.h>
