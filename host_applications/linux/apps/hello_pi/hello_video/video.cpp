@@ -25,6 +25,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
+#include "nalu/NALU.hpp"
+
 extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,8 +34,6 @@ extern "C" {
 
 #include "bcm_host.h"
 #include "ilclient.h"
-
-//#include "nalu/NALU.hpp"
 
 #define OMX_INIT_STRUCTURE(a) \
   memset(&(a), 0, sizeof(a)); \
