@@ -48,6 +48,7 @@ extern "C" {
 static COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render = NULL;
 static  TUNNEL_T tunnel[4];
 static int status = 0;
+static int in_nalu_c=0;
 
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   //printf("got event %p %p %d\n", userdata, comp, data);
@@ -216,7 +217,8 @@ static int video_decode_test() {
 	  if (data_len <= 0) break;
 
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
-		fprintf(stderr, "Parsed NALU\n");
+		fprintf(stderr, "Parsed NALU %d\n",in_nalu_c);
+		in_nalu_c++:
 		NALU nalu(buf->pBuffer,data_len);
 		if(!m_keyframe_finder.check_is_still_same_config_data(nalu)){
 		  fprintf(stderr, "Detected changed sps / pps, restart\n");
