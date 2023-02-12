@@ -20,12 +20,6 @@
 
 #include "NALUnitType.hpp"
 
-// dependency could be easily removed again
-#include <h264_common.h>
-#include <sps_parser.h>
-#include <pps_parser.h>
-#include <qdebug.h>
-
 /**
  * A NALU either contains H264 data (default) or H265 data
  * NOTE: Only when copy constructing a NALU it owns the data, else it only holds a data pointer (that might get overwritten by the parser if you hold onto a NALU)
@@ -122,93 +116,13 @@ public:
    }
 public:
    bool isSPS()const{
-       if(IS_H265_PACKET){
-           return get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_SPS;
-       }
        return (get_nal_unit_type() == NALUnitType::H264::NAL_UNIT_TYPE_SPS);
    }
    bool isPPS()const{
-       if(IS_H265_PACKET){
-           return get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_PPS;
-       }
        return (get_nal_unit_type() == NALUnitType::H264::NAL_UNIT_TYPE_PPS);
    }
-   // VPS NALUs are only possible in H265
-   bool isVPS()const{
-       assert(IS_H265_PACKET);
-       return get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_VPS;
-   }
-   bool is_aud()const{
-       if(IS_H265_PACKET){
-           return get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_ACCESS_UNIT_DELIMITER;
-       }
-       return (get_nal_unit_type() == NALUnitType::H264::NAL_UNIT_TYPE_AUD);
-   }
-   bool is_sei()const{
-       if(IS_H265_PACKET){
-           return get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_PREFIX_SEI || get_nal_unit_type()==NALUnitType::H265::NAL_UNIT_SUFFIX_SEI;
-       }
-       return (get_nal_unit_type() == NALUnitType::H264::NAL_UNIT_TYPE_SEI);
-   }
-   bool is_dps()const{
-       if(IS_H265_PACKET){
-           // doesn't exist in h265
-           return false;
-       }
-       return (get_nal_unit_type() == NALUnitType::H264::NAL_UNIT_TYPE_DPS);
-   }
    bool is_config(){
-       return isSPS() || isPPS() || (IS_H265_PACKET && isVPS());
-   }
-   // keyframe / IDR frame
-   bool is_keyframe()const{
-       const auto nut=get_nal_unit_type();
-       if(IS_H265_PACKET){
-           return false;
-       }
-       if(nut==NALUnitType::H264::NAL_UNIT_TYPE_CODED_SLICE_IDR){
-           return true;
-       }
-       return false;
-   }
-   bool is_frame_but_not_keyframe()const{
-       const auto nut=get_nal_unit_type();
-       if(IS_H265_PACKET)return false;
-       return (nut==NALUnitType::H264::NAL_UNIT_TYPE_CODED_SLICE_NON_IDR);
-   }
-   std::array<int,2> sps_get_width_height()const{
-       assert(isSPS());
-       // r.n we only support fetching with and height from sps for h264 (and only need it in this case anyways)
-       assert(!IS_H265_PACKET);
-       const auto offset_for_webrtc=webrtc::H264::kNaluTypeSize;
-       auto _sps = webrtc::SpsParser::ParseSps(getDataWithoutPrefix() + offset_for_webrtc, getDataSizeWithoutPrefix() - offset_for_webrtc);
-       if(_sps){
-           const int width=_sps->width;
-           const int height=_sps->height;
-           return {width,height};
-       }
-       return {640,480};
-   }
-   // Print all sps info, for debugging
-   std::string get_sps_as_string()const{
-       if(!isSPS())return "no sps";
-       const auto offset_for_webrtc=webrtc::H264::kNaluTypeSize;
-       auto sps_opt = webrtc::SpsParser::ParseSps(getDataWithoutPrefix() + offset_for_webrtc, getDataSizeWithoutPrefix() - offset_for_webrtc);
-       if(!sps_opt){
-           return "cannot parse sps";
-       }
-       auto sps=sps_opt.value();
-       std::stringstream ss;
-       ss<<"SPS{"<<sps.width<<"x"<<sps.height<<" ";
-       ss<<"delta_pic_order_always_zero_flag:"<<sps.delta_pic_order_always_zero_flag<<",";
-       ss<<"frame_mbs_only_flag:"<<sps.frame_mbs_only_flag<<",";
-       ss<<"log2_max_frame_num:"<<sps.log2_max_frame_num<<",";
-       ss<<"log2_max_pic_order_cnt_lsb:"<<sps.log2_max_pic_order_cnt_lsb<<",";
-       ss<<"pic_order_cnt_type:"<<sps.pic_order_cnt_type<<",";
-       ss<<"max_num_ref_frames:"<<sps.max_num_ref_frames<<",";
-       ss<<"vui_params_present:"<<sps.vui_params_present<<",";
-       ss<<"id:"<<sps.id<<"}";
-       return ss.str();
+       return isSPS() || isPPS();
    }
 };
 

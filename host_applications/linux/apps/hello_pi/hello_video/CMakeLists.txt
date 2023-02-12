@@ -1,5 +1,5 @@
 set(EXEC hello_video.bin)
-set(SRCS video.c)
+set(SRCS video.cpp)
 
 add_executable(${EXEC} ${SRCS})
 target_link_libraries(${EXEC} ${HELLO_PI_LIBS})
