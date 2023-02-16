@@ -153,6 +153,7 @@ static int video_decode_test() {
 	configDisplay.transform = (OMX_DISPLAYTRANSFORMTYPE)0;
 
 	const auto rotation_deg=read_rotation_from_file();
+	fprintf(stderr,"Using %d rotation\n",rotation_deg);
 	if(rotation_deg==90){
 	  configDisplay.transform = OMX_DISPLAY_ROT90;
 	}
