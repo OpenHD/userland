@@ -54,6 +54,21 @@ static int in_nalu_c=0;
 static bool changed_once=false;
 static bool terminate_and_let_service_restart=false;
 
+// For users who rotate "QOpenHD"
+static int read_rotation_from_file()
+{
+  const char* file_name="/tmp/video_service_rotation.txt";
+  FILE* file = fopen (file_name, "r");
+  if(!file)return 0;
+  int i = 0;
+  if(fscanf(file, "%d", &i)==0){
+	i=0;
+  };
+  fclose(file);
+  return i;
+}
+
+
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
 
@@ -136,6 +151,17 @@ static int video_decode_test() {
 	configDisplay.num = 0;
 	configDisplay.layer = -128;
 	configDisplay.transform = (OMX_DISPLAYTRANSFORMTYPE)0;
+
+	const auto rotation_deg=read_rotation_from_file();
+	if(rotation_deg==90){
+	  configDisplay.transform = OMX_DISPLAY_ROT90;
+	}
+	if(rotation_deg==180){
+	  configDisplay.transform = OMX_DISPLAY_ROT180;
+	}
+	if(rotation_deg==270){
+	  configDisplay.transform = OMX_DISPLAY_ROT270;
+	}
 
 	if (OMX_SetConfig(ILC_GET_HANDLE(video_render), OMX_IndexConfigDisplayRegion, &configDisplay) != OMX_ErrorNone)
 	  status = -15;
