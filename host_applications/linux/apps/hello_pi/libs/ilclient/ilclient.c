@@ -827,6 +827,10 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
 
    for (i=0; i != portdef.nBufferCountActual; i++)
    {
+	  // Consti10 dirty
+	  if(portdef.nBufferSize==81920){
+		portdef.nBufferSize= 1024*100;
+	  }
       unsigned char *buf;
       if(ilclient_malloc)
          buf = ilclient_malloc(private, portdef.nBufferSize, portdef.nBufferAlignment, comp->bufname);
