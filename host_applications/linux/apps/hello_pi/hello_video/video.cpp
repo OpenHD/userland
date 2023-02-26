@@ -247,11 +247,11 @@ static int video_decode_test() {
 
 	ilclient_set_port_settings_callback(client, psc_callback, NULL);
 
-	fprintf(stderr, "Initialization done - accepting data X\n");
+	fprintf(stderr, "Initialization done - accepting data Y\n");
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  //fprintf(stderr,"Buff size is %d\n",buf->nAllocLen);
+	  fprintf(stderr,"Buff size is %d\n",(int)buf->nAllocLen);
 	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 
