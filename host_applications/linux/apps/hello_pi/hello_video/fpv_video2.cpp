@@ -1,0 +1,395 @@
+/*
+Copyright (c) 2012, 2019, Broadcom Europe Ltd
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the copyright holder nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+// Video deocode demo using OpenMAX IL though the ilcient helper library
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
+
+extern "C" {
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "bcm_host.h"
+#include "ilclient.h"
+
+#define OMX_INIT_STRUCTURE(a) \
+  memset(&(a), 0, sizeof(a)); \
+  (a).nSize = sizeof(a); \
+  (a).nVersion.s.nVersionMajor = OMX_VERSION_MAJOR; \
+  (a).nVersion.s.nVersionMinor = OMX_VERSION_MINOR; \
+  (a).nVersion.s.nRevision = OMX_VERSION_REVISION; \
+  (a).nVersion.s.nStep = OMX_VERSION_STEP
+
+static COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render = NULL;
+static  TUNNEL_T tunnel[4];
+static int status = 0;
+static int in_nalu_c=0;
+
+// XX
+uint32_t search = 0x3333, data_in, j=0;
+// XX
+
+// Fixes "hanging" when user changes things like resolution on the fly
+static bool changed_once=false;
+static bool terminate_and_let_service_restart=false;
+
+// For users who rotate "QOpenHD"
+static int read_rotation_from_file()
+{
+  const char* file_name="/tmp/video_service_rotation.txt";
+  FILE* file = fopen (file_name, "r");
+  if(!file)return 0;
+  int i = 0;
+  if(fscanf(file, "%d", &i)==0){
+	i=0;
+  };
+  fclose(file);
+  return i;
+}
+
+
+static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
+  fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
+
+  if (comp == video_decode && data == 131) {
+	fprintf(stderr,"got event decode port changed, changed_once%s\n",(changed_once ? "Y":"N"));
+	if(changed_once){
+	  terminate_and_let_service_restart= true;
+	  return;
+	}
+	changed_once= true;
+	if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
+	  status = -1;
+	  fprintf(stderr, "ilclient_setup_tunnel0 failed\n");
+	  return;
+	}
+
+	ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
+
+	// now setup tunnel to video_render
+	if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
+	  status = -1;
+	  fprintf(stderr, "ilclient_setup_tunnel1 failed\n");
+	  return;
+	}
+
+	ilclient_change_component_state(video_render, OMX_StateExecuting);
+  }
+}
+
+static int video_decode_test() {
+  OMX_VIDEO_PARAM_PORTFORMATTYPE format;
+  OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
+
+  COMPONENT_T *clock = NULL;
+  COMPONENT_T *list[5];
+  ILCLIENT_T *client;
+
+  char fifonam[100];
+  sprintf(fifonam, "/tmp/videoshm");
+  printf("still alive");
+  struct stat fdstatus;
+
+  signal(SIGPIPE, SIG_IGN);
+
+  int readfd;
+  readfd = open(fifonam, O_RDONLY | O_NONBLOCK);
+  if(-1==readfd)
+  {
+	perror("ftee: readfd: open()");
+	exit(EXIT_FAILURE);
+  }
+
+  if(-1==fstat(readfd, &fdstatus))
+  {
+	perror("ftee: fstat");
+	close(readfd);
+	exit(EXIT_FAILURE);
+  }
+
+
+
+  memset(list, 0, sizeof(list));
+  memset(tunnel, 0, sizeof(tunnel));
+
+  if ((client = ilclient_init()) == NULL) {
+	fprintf(stderr, "ilclient_init failed\n");
+	return -1;
+  }
+
+  if (OMX_Init() != OMX_ErrorNone) {
+	ilclient_destroy(client);
+	fprintf(stderr, "OMX_init failed\n");
+	return -1;
+  }
+
+  // create video_decode
+  if (ilclient_create_component(client,
+								&video_decode,
+								(char*)"video_decode",
+								(ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
+	fprintf(stderr, "video_decode create failed\n");
+	return -1;
+  }
+
+  list[0] = video_decode;
+
+  // create video_render
+  if (ilclient_create_component(client, &video_render, "video_render", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+	fprintf(stderr, "video_render create failed\n");
+	return -1;
+  }
+
+  list[1] = video_render;
+
+  if (1) {
+	OMX_CONFIG_DISPLAYREGIONTYPE configDisplay;
+	memset(&configDisplay, 0, sizeof configDisplay);
+	configDisplay.nSize = sizeof configDisplay;
+	configDisplay.nVersion.nVersion = OMX_VERSION;
+	configDisplay.nPortIndex = 90;
+
+	configDisplay.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_TRANSFORM | OMX_DISPLAY_SET_LAYER | OMX_DISPLAY_SET_NUM);
+	configDisplay.num = 0;
+	configDisplay.layer = -128;
+	configDisplay.transform = (OMX_DISPLAYTRANSFORMTYPE)0;
+
+	const auto rotation_deg=read_rotation_from_file();
+	fprintf(stderr,"Using %d rotation\n",rotation_deg);
+	if(rotation_deg==90){
+	  configDisplay.transform = OMX_DISPLAY_ROT90;
+	}
+	if(rotation_deg==180){
+	  configDisplay.transform = OMX_DISPLAY_ROT180;
+	}
+	if(rotation_deg==270){
+	  configDisplay.transform = OMX_DISPLAY_ROT270;
+	}
+
+	if (OMX_SetConfig(ILC_GET_HANDLE(video_render), OMX_IndexConfigDisplayRegion, &configDisplay) != OMX_ErrorNone)
+	  status = -15;
+  }
+
+
+
+  // create clock
+  if (ilclient_create_component(client, &clock, "clock", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+	fprintf(stderr, "clock create failed\n");
+	return -1;
+  }
+
+  list[2] = clock;
+
+  memset(&cstate, 0, sizeof(cstate));
+  cstate.nSize = sizeof(cstate);
+  cstate.nVersion.nVersion = OMX_VERSION;
+  cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
+  cstate.nWaitMask = 1;
+
+  if (clock != NULL
+	  && OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
+	fprintf(stderr, "OMX set clock state failed\n");
+	return -1;
+  }
+
+  // create video_scheduler
+  if (ilclient_create_component(client, &video_scheduler, "video_scheduler", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+	fprintf(stderr, "create video_scheduler failed\n");
+	return -1;
+  }
+
+  list[3] = video_scheduler;
+
+  set_tunnel(tunnel, video_decode, 131, video_scheduler, 10);
+  set_tunnel(tunnel + 1, video_scheduler, 11, video_render, 90);
+  set_tunnel(tunnel + 2, clock, 80, video_scheduler, 12);
+
+  // setup clock tunnel first
+  if (ilclient_setup_tunnel(tunnel + 2, 0, 0) != 0) {
+	fprintf(stderr, "ilclient_setup_tunnel2 failed\n");
+	return -1;
+  }
+
+  ilclient_change_component_state(clock, OMX_StateExecuting);
+  ilclient_change_component_state(video_decode, OMX_StateIdle);
+
+  memset(&format, 0, sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
+  format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
+  format.nVersion.nVersion = OMX_VERSION;
+  format.nPortIndex = 130;
+  format.eCompressionFormat = OMX_VIDEO_CodingAVC;
+  format.xFramerate = 30 << 16;
+  {
+	OMX_PARAM_PORTDEFINITIONTYPE portdef;
+	OMX_INIT_STRUCTURE(portdef);
+	portdef.nPortIndex = 130;
+	portdef.nBufferSize = 1024*200;
+	if(OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone){
+	  fprintf(stderr, "Cannot set buffer size\n");
+	}else{
+	  fprintf(stderr, "Set buffer size\n");
+	}
+  }
+
+  if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) == OMX_ErrorNone &&
+	  ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) == 0) {
+	OMX_BUFFERHEADERTYPE *buf;
+	int first_packet = 1;
+
+	ilclient_change_component_state(video_decode, OMX_StateExecuting);
+
+#ifdef DISPLAY_SET_NOASPECT
+	{
+		OMX_CONFIG_DISPLAYREGIONTYPE display;
+		OMX_ERRORTYPE omx_err;
+
+		OMX_INIT_STRUCTURE(display);
+		display.nPortIndex =  90;
+		display.set = (OMX_DISPLAYSETTYPE)OMX_DISPLAY_SET_NOASPECT;
+		display.noaspect = OMX_TRUE;
+
+		omx_err = OMX_SetParameter(ILC_GET_HANDLE(video_render), OMX_IndexConfigDisplayRegion, &display);
+
+		if (omx_err != OMX_ErrorNone)
+		{
+			fprintf(stderr, "Unable to set aspect: 0x%x\n", omx_err);
+			return -1;
+		}
+	}
+#endif
+
+	ilclient_set_port_settings_callback(client, psc_callback, NULL);
+
+	fprintf(stderr, "Initialization done - accepting data Z\n");
+
+	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
+	  //fprintf(stderr, "Read video data\n");
+	  unsigned char *dest = buf->pBuffer;
+	  int data_len = 0;
+	  while ((buf->nAllocLen-data_len)>2000){
+		//data_in = fread(dest, 1, 2000, in);
+		data_in = read(readfd, dest, 2000);
+
+		data_len += data_in;
+		j = 0;
+		while (j<data_in)       // search for frame delimiter
+		{
+		  search = (search << 8) +  *(dest + j);
+
+		  if ((search == 0x0121) | (search == 0x0127))  break;
+		  j++;
+		}
+		if (j != data_in) break;
+		dest += data_in;
+	  }
+
+	  if(terminate_and_let_service_restart){
+		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
+		// Properly terminating hangs for whatever reason - just let the service restart
+		exit(0);
+		break;
+	  }
+
+	  //fprintf(stderr, "Got video data %d\n",data_len);
+	  /*if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
+		in_nalu_c++;
+		NALU nalu(buf->pBuffer,data_len);
+		fprintf(stderr, "Parsed NALU %d type:%d\n",in_nalu_c,nalu.get_nal_unit_type());
+		if(!m_keyframe_finder.check_is_still_same_config_data(nalu)){
+		  fprintf(stderr, "Detected changed sps / pps, restart\n");
+		  exit(-1);
+		}
+	  }else{
+		fprintf(stderr, "Not a valid NALU %d\n",data_len);
+	  }*/
+
+	  buf->nFilledLen = data_len;
+	  buf->nOffset = 0;
+
+	  if (first_packet) {
+		buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
+		first_packet = 0;
+	  } else
+		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
+
+	  buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+	  //fprintf(stderr, "Begin empty this buffer \n");
+	  if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
+		status = -1;
+		fprintf(stderr, "OMX_EmptyThisBuffer failed\n");
+		break;
+	  }
+	  //fprintf(stderr, "End empty this buffer \n");
+	}
+
+	fprintf(stderr, "Broke out of constant decode loop for whatever reason\n");
+
+	// This hangs for whatever reason
+	if (buf != NULL) {
+	  buf->nOffset=0;
+	  buf->nFilledLen = 0;
+	  buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
+	  fprintf(stderr, "begin OMX_EmptyThisBuffer (EOS)\n");
+	  OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
+	  fprintf(stderr, "end OMX_EmptyThisBuffer (EOS)\n");
+	}
+
+	fprintf(stderr, "ilclient_flush_tunnels\n");
+	// need to flush the renderer to allow video_decode to disable its input port
+	ilclient_flush_tunnels(tunnel, 0);
+	fprintf(stderr, "ilclient_flush_tunnels end\n");
+  }
+
+  ilclient_disable_tunnel(tunnel);
+  ilclient_disable_tunnel(tunnel + 1);
+  ilclient_disable_tunnel(tunnel + 2);
+  ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+  ilclient_teardown_tunnels(tunnel);
+
+  ilclient_state_transition(list, OMX_StateIdle);
+  ilclient_state_transition(list, OMX_StateLoaded);
+
+  ilclient_cleanup_components(list);
+
+  OMX_Deinit();
+
+  ilclient_destroy(client);
+  return status;
+}
+
+int main(int argc, char **argv) {
+  bcm_host_init();
+  fprintf(stderr, "video_decode_test-begin\n");
+  int ret=video_decode_test();
+  fprintf(stderr, "video_decode_test-end\n");
+  return ret;
+}
+}
