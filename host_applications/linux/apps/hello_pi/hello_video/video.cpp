@@ -217,6 +217,17 @@ static int video_decode_test() {
   format.nPortIndex = 130;
   format.eCompressionFormat = OMX_VIDEO_CodingAVC;
   format.xFramerate = 30 << 16;
+  {
+	OMX_PARAM_PORTDEFINITIONTYPE portdef;
+	OMX_INIT_STRUCTURE(portdef);
+	portdef.nPortIndex = 130;
+	portdef.nBufferSize = 1024*200;
+	if(OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone){
+	  fprintf(stderr, "Cannot set buffer size\n");
+	}else{
+	  fprintf(stderr, "Set buffer size\n");
+	}
+  }
 
   if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) == OMX_ErrorNone &&
 	  ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) == 0) {
