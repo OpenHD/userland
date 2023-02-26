@@ -262,9 +262,12 @@ static int video_decode_test() {
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
+	  const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
 	  fprintf(stderr,"Buff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
+	  int data_len_2=read(STDIN_FILENO, buf->pBuffer+data_len, buf->nAllocLen-data_len);
+	  fprintf(stderr,"Second read:%d\n",data_len_2);
+
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
 		// Properly terminating hangs for whatever reason - just let the service restart
