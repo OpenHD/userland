@@ -10,3 +10,6 @@ target_link_libraries(fpv_video1 ${HELLO_PI_LIBS})
 
 install(TARGETS ${EXEC}
         RUNTIME DESTINATION bin)
+
+install(TARGETS fpv_video1
+        RUNTIME DESTINATION bin)
