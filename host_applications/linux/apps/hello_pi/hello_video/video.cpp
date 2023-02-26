@@ -247,7 +247,7 @@ static int video_decode_test() {
 
 	ilclient_set_port_settings_callback(client, psc_callback, NULL);
 
-	fprintf(stderr, "Initialization done - accepting data\n");
+	fprintf(stderr, "Initialization done - accepting data X\n");
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
