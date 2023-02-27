@@ -53,7 +53,7 @@ jobs:
             rm -Rf /opt/vc/include
             mkdir -p /opt/vc/usr/local/bin/
             mkdir -p /opt/vc/etc/systemd/system
-            cp -r /opt/vc/bin/hello_video.bin /opt/vc/usr/local/bin/
+            cp -r /opt/vc/bin/fpv_video0.bin /opt/vc/usr/local/bin/
             cp -r /opt/vc/rpi_omx_h264_decode.service /opt/vc/etc/systemd/system/
             chmod +x /opt/vc/etc/systemd/system/rpi_omx_h264_decode.service
             rm -Rf /opt/vc/bin
