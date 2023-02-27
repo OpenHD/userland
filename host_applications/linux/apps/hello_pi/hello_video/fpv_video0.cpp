@@ -175,7 +175,7 @@ static int video_decode_test(FILE* in) {
   format.nVersion.nVersion = OMX_VERSION;
   format.nPortIndex = 130;
   format.eCompressionFormat = OMX_VIDEO_CodingAVC;
-  format.xFramerate = 30 << 16;
+  format.xFramerate = 90 << 16;
   {
 	OMX_PARAM_PORTDEFINITIONTYPE portdef;
 	OMX_INIT_STRUCTURE(portdef);
