@@ -98,14 +98,13 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   }
 }
 
-static int video_decode_test() {
+static int video_decode_test(FILE* in) {
   OMX_VIDEO_PARAM_PORTFORMATTYPE format;
   OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
   COMPONENT_T *clock = NULL;
   COMPONENT_T *list[5];
   ILCLIENT_T *client;
-
 
   memset(list, 0, sizeof(list));
   memset(tunnel, 0, sizeof(tunnel));
@@ -262,11 +261,10 @@ static int video_decode_test() {
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
+	  //const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
+	  const int data_len = fread( buf->pBuffer, 1, buf->nAllocLen, in);
 	  if (data_len <= 0) break;
 	  fprintf(stderr,"Buff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
-	  int data_len_2=read(STDIN_FILENO, buf->pBuffer+data_len, buf->nAllocLen-data_len);
-	  fprintf(stderr,"Second read:%d\n",data_len_2);
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
@@ -344,8 +342,19 @@ static int video_decode_test() {
 
 int main(int argc, char **argv) {
   bcm_host_init();
+  if (argc < 2) {
+	printf("Usage: %s <filename>\n", argv[0]);
+	exit(1);
+  }
   fprintf(stderr, "video_decode_test-begin\n");
-  int ret=video_decode_test();
+  FILE *in= nullptr;
+  if((in = fopen(argv[1], "rb")) == NULL){
+	return -2;
+  }
+  int ret=video_decode_test(in);
+  if(in){
+	fclose(in);
+  }
   fprintf(stderr, "video_decode_test-end\n");
   return ret;
 }
