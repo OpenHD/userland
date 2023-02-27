@@ -23,6 +23,8 @@ static int read_rotation_from_file()
   return i;
 }
 
+// "Behind" qt surface
+// Rotation controlled by QOpenHD
 static void set_display_region( COMPONENT_T *video_render){
   OMX_CONFIG_DISPLAYREGIONTYPE configDisplay;
   memset(&configDisplay, 0, sizeof configDisplay);
