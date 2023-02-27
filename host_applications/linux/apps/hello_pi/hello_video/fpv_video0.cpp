@@ -84,7 +84,7 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   }
 }
 
-static int video_decode_test(FILE* in) {
+static int video_decode_test(FILE* in,bool insert_eof) {
   OMX_VIDEO_PARAM_PORTFORMATTYPE format;
   OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
@@ -218,6 +218,9 @@ static int video_decode_test(FILE* in) {
 	ilclient_set_port_settings_callback(client, psc_callback, NULL);
 
 	fprintf(stderr, "Initialization done - accepting data Z\n");
+	if(insert_eof){
+	  fprintf(stderr, "Insert EOF on\n");
+	}
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
@@ -256,9 +259,8 @@ static int video_decode_test(FILE* in) {
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
 	  //buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
-	  if(true){
+	  if(insert_eof){
 		buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
-		fprintf(stderr,"Adding EOF\n");
 	  }
 
 	  //fprintf(stderr, "Begin empty this buffer \n");
@@ -308,7 +310,7 @@ static int video_decode_test(FILE* in) {
 int main(int argc, char **argv) {
   bcm_host_init();
   if (argc < 2) {
-	printf("Usage: %s <filename>\n", argv[0]);
+	printf("Usage: %s <filename> <exp_add_eof>\n", argv[0]);
 	exit(1);
   }
   fprintf(stderr, "video_decode_test-begin\n");
@@ -316,7 +318,8 @@ int main(int argc, char **argv) {
   if((in = fopen(argv[1], "rb")) == NULL){
 	return -2;
   }
-  int ret=video_decode_test(in);
+  bool insert_eof = argc >=3;
+  int ret=video_decode_test(in,insert_eof);
   if(in){
 	fclose(in);
   }
