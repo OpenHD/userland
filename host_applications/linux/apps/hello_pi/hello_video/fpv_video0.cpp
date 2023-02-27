@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
 #include "nalu/KeyFrameFinder.hpp"
+#include "openhd_util.h"
 
 static KeyFrameFinder m_keyframe_finder{};
 
@@ -53,21 +54,6 @@ static int in_nalu_c=0;
 // Fixes "hanging" when user changes things like resolution on the fly
 static bool changed_once=false;
 static bool terminate_and_let_service_restart=false;
-
-// For users who rotate "QOpenHD"
-static int read_rotation_from_file()
-{
-  const char* file_name="/tmp/video_service_rotation.txt";
-  FILE* file = fopen (file_name, "r");
-  if(!file)return 0;
-  int i = 0;
-  if(fscanf(file, "%d", &i)==0){
-	i=0;
-  };
-  fclose(file);
-  return i;
-}
-
 
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
@@ -140,34 +126,8 @@ static int video_decode_test(FILE* in) {
   list[1] = video_render;
 
   if (1) {
-	OMX_CONFIG_DISPLAYREGIONTYPE configDisplay;
-	memset(&configDisplay, 0, sizeof configDisplay);
-	configDisplay.nSize = sizeof configDisplay;
-	configDisplay.nVersion.nVersion = OMX_VERSION;
-	configDisplay.nPortIndex = 90;
-
-	configDisplay.set = (OMX_DISPLAYSETTYPE)(OMX_DISPLAY_SET_TRANSFORM | OMX_DISPLAY_SET_LAYER | OMX_DISPLAY_SET_NUM);
-	configDisplay.num = 0;
-	configDisplay.layer = -128;
-	configDisplay.transform = (OMX_DISPLAYTRANSFORMTYPE)0;
-
-	const auto rotation_deg=read_rotation_from_file();
-	fprintf(stderr,"Using %d rotation\n",rotation_deg);
-	if(rotation_deg==90){
-	  configDisplay.transform = OMX_DISPLAY_ROT90;
-	}
-	if(rotation_deg==180){
-	  configDisplay.transform = OMX_DISPLAY_ROT180;
-	}
-	if(rotation_deg==270){
-	  configDisplay.transform = OMX_DISPLAY_ROT270;
-	}
-
-	if (OMX_SetConfig(ILC_GET_HANDLE(video_render), OMX_IndexConfigDisplayRegion, &configDisplay) != OMX_ErrorNone)
-	  status = -15;
+	set_display_region(video_render);
   }
-
-
 
   // create clock
   if (ilclient_create_component(client, &clock, "clock", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
