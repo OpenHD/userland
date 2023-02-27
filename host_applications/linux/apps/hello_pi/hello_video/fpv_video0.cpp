@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
 #include "nalu/KeyFrameFinder.hpp"
-#include "openhd_util.h"
 
 static KeyFrameFinder m_keyframe_finder{};
 
@@ -37,6 +36,7 @@ extern "C" {
 
 #include "bcm_host.h"
 #include "ilclient.h"
+#include "openhd_util.h"
 
 #define OMX_INIT_STRUCTURE(a) \
   memset(&(a), 0, sizeof(a)); \
