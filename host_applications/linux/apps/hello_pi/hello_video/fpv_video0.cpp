@@ -256,6 +256,11 @@ static int video_decode_test(FILE* in) {
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
 	  //buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+	  if(true){
+		buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+		fprintf(stderr,"Adding EOF\n");
+	  }
+
 	  //fprintf(stderr, "Begin empty this buffer \n");
 	  if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
 		status = -1;
