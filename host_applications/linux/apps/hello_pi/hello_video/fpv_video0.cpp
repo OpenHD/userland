@@ -256,7 +256,7 @@ static int video_decode_test(FILE* in) {
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
 	  //buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
-	  if(false){
+	  if(true){
 		buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
 		fprintf(stderr,"Adding EOF\n");
 	  }
