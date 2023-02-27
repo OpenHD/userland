@@ -221,10 +221,10 @@ static int video_decode_test(FILE* in) {
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  //const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
-	  const int data_len = fread( buf->pBuffer, 1, buf->nAllocLen, in);
+	  const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
+	  //const int data_len = fread( buf->pBuffer, 1, buf->nAllocLen, in);
 	  if (data_len <= 0) break;
-	  fprintf(stderr,"Buff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
+	  fprintf(stderr,"XBuff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
