@@ -240,6 +240,10 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	  }else{
 		fprintf(stderr, "No valid prefix\n");
 	  }
+	  if(data_len==6){
+		NALU nalu(buf->pBuffer,data_len);
+		fprintf(stderr,"Data len==6, type:%d\n",nalu.get_nal_unit_type());
+	  }
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
