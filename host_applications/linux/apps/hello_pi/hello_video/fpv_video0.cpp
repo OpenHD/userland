@@ -229,10 +229,10 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	  if (data_len <= 0) break;
 	  if(data_len==65536){
 		const int data_len_second_read = read(STDIN_FILENO, buf->pBuffer+data_len, buf->nAllocLen-data_len);
-		fprintf(stderr,"Reading rest %d\n",data_len_second_read);
+		//fprintf(stderr,"Reading rest %d\n",data_len_second_read);
 		data_len+=data_len_second_read;
 	  }
-	  fprintf(stderr,"XBuff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
+	  /*fprintf(stderr,"XBuff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len)){
 		fprintf(stderr,"Has valid 3 byte prefix\n");
 	  }else if(check_has_valid_prefix(true,buf->pBuffer,data_len)) {
@@ -243,7 +243,7 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	  if(data_len==6){
 		NALU nalu(buf->pBuffer,data_len);
 		fprintf(stderr,"Data len==6, type:%d\n",nalu.get_nal_unit_type());
-	  }
+	  }*/
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
