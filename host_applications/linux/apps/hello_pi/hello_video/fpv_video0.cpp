@@ -224,10 +224,22 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  const int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
+	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  //const int data_len = fread( buf->pBuffer, 1, buf->nAllocLen, in);
 	  if (data_len <= 0) break;
+	  if(data_len==65536){
+		const int data_len_second_read = read(STDIN_FILENO, buf->pBuffer+data_len, buf->nAllocLen-data_len);
+		fprintf(stderr,"Reading rest %d\n",data_len_second_read);
+		data_len+=data_len_second_read;
+	  }
 	  fprintf(stderr,"XBuff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
+	  if(check_has_valid_prefix(false,buf->pBuffer,data_len)){
+		fprintf(stderr,"Has valid 3 byte prefix\n");
+	  }else if(check_has_valid_prefix(true,buf->pBuffer,data_len)) {
+		fprintf(stderr, "Has valid 4 byte prefix\n");
+	  }else{
+		fprintf(stderr, "No valid prefix\n");
+	  }
 
 	  if(terminate_and_let_service_restart){
 		fprintf(stderr, "Needs restart (probably resolution changed during streaming)\n");
