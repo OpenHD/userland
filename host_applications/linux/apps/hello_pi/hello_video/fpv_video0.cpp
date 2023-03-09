@@ -274,6 +274,7 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	  } else
 		buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
 
+	  // We rely on gstreamer writing an AUD after frame(s) to not create additional latency
 	  //buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
 	  if(insert_eof){
 		buf->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
