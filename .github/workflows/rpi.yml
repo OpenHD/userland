@@ -54,8 +54,6 @@ jobs:
             mkdir -p /opt/vc/usr/local/bin/
             mkdir -p /opt/vc/etc/systemd/system
             cp -r /opt/vc/bin/fpv_video0.bin /opt/vc/usr/local/bin/
-            cp -r /opt/vc/rpi_omx_h264_decode.service /opt/vc/etc/systemd/system/
-            chmod +x /opt/vc/etc/systemd/system/rpi_omx_h264_decode.service
             rm -Rf /opt/vc/bin
             mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
