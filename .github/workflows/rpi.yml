@@ -47,7 +47,6 @@ jobs:
             make -j4
             sudo make install
             cd ..
-            cp -Rf rpi_omx_h264_decode.service /opt/vc/
             rm -Rf /opt/vc/src
             rm -Rf /opt/vc/man
             rm -Rf /opt/vc/include
