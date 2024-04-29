@@ -49,6 +49,7 @@ static COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render 
 static  TUNNEL_T tunnel[4];
 static int status = 0;
 static int in_nalu_c=0;
+static bool enable_x20_discovery=true;
 
 // Fixes "hanging" when user changes things like resolution on the fly
 static bool changed_once=false;
@@ -81,6 +82,29 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
 
 	ilclient_change_component_state(video_render, OMX_StateExecuting);
   }
+}
+
+void configure_x20(OMX_BUFFERHEADERTYPE *buf){
+    printf("Applying x20 hack\n");
+    FILE *fp = fopen("/usr/local/bin/x20_header.h264", "rb");
+    assert(fp);
+    fseek(fp, 0L, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    assert(size>0);
+    std::vector<uint8_t> tmp_data(size);
+    long read_len=fread(tmp_data.data(), 1, size, fp);
+    assert(read_len==size);
+    fclose(fp);
+
+    memcpy(buf->pBuffer,tmp_data.data(),read_len);
+
+    buf->nFilledLen = read_len;
+    buf->nOffset = 0;
+
+    if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
+        fprintf(stderr, "Cannot init X20\n");
+    }
 }
 
 uint64_t first_frame_ms=0;
@@ -253,6 +277,38 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 		exit(0);
 		break;
 	  }
+        if(enable_x20_discovery){
+            // X20 auto detection
+            if(!air_unit_discovery_finished){
+                const int x20_check=check_for_x20(buf->pBuffer,data_len);
+                if(x20_check==1){
+                    // We have an x20
+                    configure_x20(buf);
+                    air_unit_discovery_finished= true;
+                    continue;
+                }else if(x20_check==2){
+                    // We have no x20 (definitely)
+                    air_unit_discovery_finished= true;
+                }else{
+                    // Unknown if x20 or not
+                    // As a bup, we assume no x20 after X seconds
+                    if(first_frame_ms==0){
+                        first_frame_ms=get_time_ms();
+                        continue;
+                    }else{
+                        const auto elapsed=get_time_ms()-first_frame_ms;
+                        if(elapsed>5*1000){
+                            // Assume no x20
+                            printf("X20 or not unknown for > 5 seconds\n");
+                            air_unit_discovery_finished= true;
+                        }else{
+                            // Skip this frame
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
 
 	  //fprintf(stderr, "Got video data %d\n",data_len);
 	  /*if(check_has_valid_prefix(false,buf->pBuffer,data_len) || check_has_valid_prefix(true,buf->pBuffer,data_len)){
@@ -333,6 +389,7 @@ int main(int argc, char **argv) {
 	exit(1);
   }
   fprintf(stderr, "video_decode_test-begin\n");
+  fprintf(stderr,"enable_x20_discovery: %s\n",enable_x20_discovery ? "Y" : "N");
   FILE *in= nullptr;
   if((in = fopen(argv[1], "rb")) == NULL){
 	return -2;
