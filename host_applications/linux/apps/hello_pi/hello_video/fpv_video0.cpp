@@ -25,8 +25,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
-//#include "nalu/parse_x20_util.h"
-//#include "time_util.h"
+#include "time_util.h"
+#include "nalu/parse_x20_util.h"
 
 extern "C" {
 #include <stdio.h>
@@ -83,6 +83,8 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   }
 }
 
+uint64_t first_frame_ms=0;
+bool air_unit_discovery_finished= false;
 static int video_decode_test(FILE* in,bool insert_eof) {
   OMX_VIDEO_PARAM_PORTFORMATTYPE format;
   OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
