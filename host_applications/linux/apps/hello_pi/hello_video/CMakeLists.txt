@@ -5,6 +5,7 @@ add_executable(${EXEC} ${SRCS})
 target_link_libraries(${EXEC} ${HELLO_PI_LIBS})
 
 add_compile_options(-Wno-write-strings)
+add_compile_options(-Wno-unused-variable)
 
 add_executable(fpv_video0.bin fpv_video0.cpp)
 target_link_libraries(fpv_video0.bin ${HELLO_PI_LIBS})
