@@ -25,9 +25,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Video deocode demo using OpenMAX IL though the ilcient helper library
 
-#include "nalu/KeyFrameFinder.hpp"
-
-static KeyFrameFinder m_keyframe_finder{};
+//#include "nalu/parse_x20_util.h"
+//#include "time_util.h"
 
 extern "C" {
 #include <stdio.h>
@@ -180,7 +179,7 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	OMX_PARAM_PORTDEFINITIONTYPE portdef;
 	OMX_INIT_STRUCTURE(portdef);
 	portdef.nPortIndex = 130;
-	portdef.nBufferSize = 1024*200;
+	portdef.nBufferSize = 1024*1024*5;
 	if(OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone){
 	  fprintf(stderr, "Cannot set buffer size\n");
 	}else{
