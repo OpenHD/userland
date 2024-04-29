@@ -9,7 +9,7 @@
 #include <cstdint>
 
 
-#include "nalu/NALU.hpp"
+#include "NALU.hpp"
 
 
 static void print_data(const uint8_t* data,int data_len){
