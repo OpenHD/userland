@@ -180,6 +180,7 @@ static int video_decode_test(FILE* in,bool insert_eof) {
 	OMX_INIT_STRUCTURE(portdef);
 	portdef.nPortIndex = 130;
 	portdef.nBufferSize = 1024*1024*5;
+    portdef.nBufferCountMin=10;
 	if(OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone){
 	  fprintf(stderr, "Cannot set buffer size\n");
 	}else{
