@@ -109,7 +109,8 @@ void configure_x20(OMX_BUFFERHEADERTYPE *buf){
 
 uint64_t first_frame_ms=0;
 bool air_unit_discovery_finished= false;
-static int video_decode_test(FILE* in,bool insert_eof) {
+bool insert_eof= false;
+static int video_decode_test(FILE* in) {
   OMX_VIDEO_PARAM_PORTFORMATTYPE format;
   OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
@@ -285,6 +286,7 @@ static int video_decode_test(FILE* in,bool insert_eof) {
                     // We have an x20
                     configure_x20(buf);
                     air_unit_discovery_finished= true;
+                    insert_eof= true;
                     continue;
                 }else if(x20_check==2){
                     // We have no x20 (definitely)
@@ -401,8 +403,8 @@ int main(int argc, char **argv) {
   if((in = fopen(argv[1], "rb")) == NULL){
 	return -2;
   }
-  bool insert_eof = argc >=3;
-  int ret=video_decode_test(in,insert_eof);
+  insert_eof = argc >=3;
+  int ret=video_decode_test(in);
   if(in){
 	fclose(in);
   }
