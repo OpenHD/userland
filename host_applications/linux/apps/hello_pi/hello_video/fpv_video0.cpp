@@ -107,6 +107,14 @@ void configure_x20(OMX_BUFFERHEADERTYPE *buf){
     }
 }
 
+void util_drop_buffer(OMX_BUFFERHEADERTYPE *buf){
+    buf->nFilledLen = 0;
+    buf->nOffset = 0;
+    if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
+        fprintf(stderr, "Cannot give buffer back\n");
+    }
+}
+
 uint64_t first_frame_ms=0;
 bool air_unit_discovery_finished= false;
 bool insert_eof= false;
@@ -298,8 +306,7 @@ static int video_decode_test(FILE* in) {
                         first_frame_ms=get_time_ms();
                         // Skip this frame
                         // Don't forget to give buffer back
-                        buf->nFilledLen = data_len;
-                        OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
+                        util_drop_buffer(buf);
                         continue;
                     }else{
                         const auto elapsed=get_time_ms()-first_frame_ms;
@@ -309,9 +316,7 @@ static int video_decode_test(FILE* in) {
                             air_unit_discovery_finished= true;
                         }else{
                             // Skip this frame
-                            // Don't forget to give buffer back
-                            buf->nFilledLen = data_len;
-                            OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
+                            util_drop_buffer(buf);
                             continue;
                         }
                     }
