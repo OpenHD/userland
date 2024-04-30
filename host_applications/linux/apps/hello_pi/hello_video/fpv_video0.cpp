@@ -295,6 +295,7 @@ static int video_decode_test(FILE* in) {
                     configure_x20(buf);
                     air_unit_discovery_finished= true;
                     insert_eof= true;
+                    // We called configure_x20 which gives the buffer back
                     continue;
                 }else if(x20_check==2){
                     // We have no x20 (definitely)
