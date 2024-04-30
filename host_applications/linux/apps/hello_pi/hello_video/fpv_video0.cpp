@@ -294,6 +294,10 @@ static int video_decode_test(FILE* in,bool insert_eof) {
                     // As a bup, we assume no x20 after X seconds
                     if(first_frame_ms==0){
                         first_frame_ms=get_time_ms();
+                        // Skip this frame
+                        // Don't forget to give buffer back
+                        buf->nFilledLen = data_len;
+                        OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
                         continue;
                     }else{
                         const auto elapsed=get_time_ms()-first_frame_ms;
@@ -303,6 +307,9 @@ static int video_decode_test(FILE* in,bool insert_eof) {
                             air_unit_discovery_finished= true;
                         }else{
                             // Skip this frame
+                            // Don't forget to give buffer back
+                            buf->nFilledLen = data_len;
+                            OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf);
                             continue;
                         }
                     }
