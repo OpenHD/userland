@@ -7,4 +7,4 @@ https://github.com/raspberrypi/tools/tree/master/arm-bcm2708/gcc-linaro-arm-linu
 
 Whilst 64-bit userspace is not officially supported, some of the libraries will work for it. To cross compile, install gcc-aarch64-linux-gnu and g++-aarch64-linux-gnu first. For both native and cross compiles, add the option ```--aarch64``` to the buildme command.
 
-Note that this repository does not contain the source for the edidparser and vcdbg binaries due to licensing restrictions.
+Note that this repository does not contain the source for the edidparser and vcdbg binaries due to licensing restrictions. 
