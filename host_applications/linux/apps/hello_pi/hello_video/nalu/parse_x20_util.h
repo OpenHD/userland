@@ -33,7 +33,8 @@ static uint8_t X20_PPS[]={
 bool has_x20_sps= false;
 bool has_x20_pps= false;
 static int check_for_x20(const uint8_t* data, int data_len){
-    if(data_len<3)return -1;
+    if(data_len<4)return -1;
+    if(!NALU::has_valid_prefix(data))return -1;
     NALU tmp(data,data_len);
     const auto type=tmp.get_nal_unit_type();
     printf("Type:%s\n",tmp.get_nal_unit_type_as_string().c_str());
