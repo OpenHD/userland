@@ -290,14 +290,14 @@ static int video_decode_test(FILE* in) {
             // X20 auto detection
             if(!air_unit_discovery_finished){
                 const int x20_check=check_for_x20(buf->pBuffer,data_len);
-                if(x20_check==0){
+                if(x20_check==2){
                     // We have an x20
                     configure_x20(buf);
                     air_unit_discovery_finished= true;
                     insert_eof= true;
                     // We called configure_x20 which gives the buffer back
                     continue;
-                }else if(x20_check==2){
+                }else if(x20_check==1){
                     // We have no x20 (definitely)
                     air_unit_discovery_finished= true;
                 }else{
