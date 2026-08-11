@@ -61,7 +61,7 @@ jobs:
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
             rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
-            fpm -a armhf -s dir -t deb -n openhd-userland -v 2.5-evo-$(date '+%m%d%H%M') -C /opt/vc -p openhd-userland.deb --after-install after-install.sh
+            fpm -a armhf -s dir -t deb -n openhd-userland -v 3.0-evo-$(date '+%m%d%H%M') -C /opt/vc -p openhd-userland.deb --after-install after-install.sh
             ls -a
 
     - name: Upload to Github
@@ -80,7 +80,7 @@ jobs:
         command: "push"
         format: "deb"
         owner: "openhd"
-        repo: ${{ github.ref_name }}
+        repo: dev-release
         distro: "raspbian"
         release: "bullseye"
         republish: "true" # needed ONLY if version is not changing

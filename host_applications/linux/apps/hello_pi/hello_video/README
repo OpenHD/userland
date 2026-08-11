@@ -1,1 +1,12 @@
 The video clip test.h264 is (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org
+
+`fpv_video0.bin` accepts an Annex-B H.264 elementary stream from a file or
+stdin.  This is compatible with the OpenHD X21/RV1126(B) MPP encoder output
+after RTP depacketization:
+
+    fpv_video0.bin stream.h264
+    cat stream.h264 | fpv_video0.bin -
+
+The old X20 recovery-header probe is opt-in with `--x20`; normal X21/RV1126(B)
+streams should be run without it. `--eof` is available for sources that need
+explicit OMX end-of-frame flags.

@@ -62,5 +62,21 @@ static int check_for_x20(const uint8_t* data, int data_len){
     return 0;
 }
 
+// RV1126(B) MPP H.264 defaults to High Profile, Level 4.2 and Annex-B output.
+// This lets the Pi decoder select its matching cyclic-intra recovery seed
+// without mistaking arbitrary High Profile sources for an X21 stream.
+static bool is_x21_mpp_sps(const uint8_t* data, int data_len) {
+    return data_len >= 8 && data[0] == 0 && data[1] == 0 &&
+           data[2] == 0 && data[3] == 1 && (data[4] & 0x1f) == 7 &&
+           data[5] == 0x64 && data[7] == 0x2a;
+}
+
+static bool contains_x21_mpp_sps(const uint8_t* data, int data_len) {
+    for (int offset = 0; offset + 8 <= data_len; ++offset) {
+        if (is_x21_mpp_sps(data + offset, data_len - offset)) return true;
+    }
+    return false;
+}
+
 
 #endif //FPVUE_PARSE_X20_UTIL_H

@@ -49,11 +49,14 @@ static COMPONENT_T *video_decode = NULL, *video_scheduler = NULL, *video_render 
 static  TUNNEL_T tunnel[4];
 static int status = 0;
 static int in_nalu_c=0;
-static bool enable_x20_discovery=true;
+// C21/MPP emits standard Annex-B H.264; keep X20 probing opt-in.
+static bool enable_x20_discovery=false;
+static bool enable_x21_recovery=true;
 
 // Fixes "hanging" when user changes things like resolution on the fly
 static bool changed_once=false;
 static bool terminate_and_let_service_restart=false;
+static bool allow_repeated_port_settings_changes=false;
 
 static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   fprintf(stderr,"got event %p %p %d\n", userdata, comp, data);
@@ -61,6 +64,10 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   if (comp == video_decode && data == 131) {
 	fprintf(stderr,"got event decode port changed, changed_once%s\n",(changed_once ? "Y":"N"));
 	if(changed_once){
+	  if (allow_repeated_port_settings_changes) {
+		fprintf(stderr,"ignoring expected X21 recovery port-settings update\n");
+		return;
+	  }
 	  terminate_and_let_service_restart= true;
 	  return;
 	}
@@ -84,9 +91,10 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   }
 }
 
-void configure_x20(OMX_BUFFERHEADERTYPE *buf){
-    printf("Applying x20 hack\n");
-    FILE *fp = fopen("/usr/local/bin/x20_header.h264", "rb");
+void configure_recovery_header(OMX_BUFFERHEADERTYPE *buf, const char* path,
+                               const char* label){
+    printf("Applying %s recovery seed\n", label);
+    FILE *fp = fopen(path, "rb");
     assert(fp);
     fseek(fp, 0L, SEEK_END);
     long size = ftell(fp);
@@ -103,7 +111,7 @@ void configure_x20(OMX_BUFFERHEADERTYPE *buf){
     buf->nOffset = 0;
 
     if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
-        fprintf(stderr, "Cannot init X20\n");
+        fprintf(stderr, "Cannot initialize %s recovery seed\n", label);
     }
 }
 
@@ -256,17 +264,13 @@ static int video_decode_test(FILE* in) {
 	if(insert_eof){
 	  fprintf(stderr, "Insert EOF on\n");
 	}
-
 	while (status == 0 && (buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
 	  //fprintf(stderr, "Read video data\n");
-	  int data_len = read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
-	  //const int data_len = fread( buf->pBuffer, 1, buf->nAllocLen, in);
+      int data_len = in ? static_cast<int>(fread(buf->pBuffer, 1, buf->nAllocLen, in))
+                        : read(STDIN_FILENO, buf->pBuffer, buf->nAllocLen);
 	  if (data_len <= 0) break;
-	  if(data_len==65536){
-		const int data_len_second_read = read(STDIN_FILENO, buf->pBuffer+data_len, buf->nAllocLen-data_len);
-		//fprintf(stderr,"Reading rest %d\n",data_len_second_read);
-		data_len+=data_len_second_read;
-	  }
+      // One pipe read is one decoder submission. A second blocking read here
+      // can stall the RTP depayloader while waiting for a large OMX buffer.
 	  /*fprintf(stderr,"XBuff size is %d, read %d\n",(int)buf->nAllocLen,data_len);
 	  if(check_has_valid_prefix(false,buf->pBuffer,data_len)){
 		fprintf(stderr,"Has valid 3 byte prefix\n");
@@ -292,10 +296,11 @@ static int video_decode_test(FILE* in) {
                 const int x20_check=check_for_x20(buf->pBuffer,data_len);
                 if(x20_check==2){
                     // We have an x20
-                    configure_x20(buf);
+                    configure_recovery_header(buf, "/usr/local/bin/x20_header.h264",
+                                              "X20");
                     air_unit_discovery_finished= true;
                     insert_eof= true;
-                    // We called configure_x20 which gives the buffer back
+                    // The recovery seed consumed this OMX input buffer.
                     continue;
                 }else if(x20_check==1){
                     // We have no x20 (definitely)
@@ -323,6 +328,16 @@ static int video_decode_test(FILE* in) {
                     }
                 }
             }
+        }
+
+        if (enable_x21_recovery && !air_unit_discovery_finished &&
+            contains_x21_mpp_sps(buf->pBuffer, data_len)) {
+            configure_recovery_header(buf, "/usr/local/bin/x21_header.h264",
+                                      "X21/RV1126B");
+            air_unit_discovery_finished = true;
+            insert_eof = true;
+            allow_repeated_port_settings_changes = true;
+            continue;
         }
 
 	  //fprintf(stderr, "Got video data %d\n",data_len);
@@ -399,17 +414,24 @@ static int video_decode_test(FILE* in) {
 
 int main(int argc, char **argv) {
   bcm_host_init();
-  if (argc < 2) {
-	printf("Usage: %s <filename> <exp_add_eof>\n", argv[0]);
-	exit(1);
+  const char* filename = nullptr;
+  for (int i = 1; i < argc; ++i) {
+    if (!strcmp(argv[i], "--x20")) enable_x20_discovery = true;
+    else if (!strcmp(argv[i], "--eof")) insert_eof = true;
+    else if (!filename) filename = argv[i];
   }
   fprintf(stderr, "video_decode_test-begin\n");
-  fprintf(stderr,"enable_x20_discovery: %s\n",enable_x20_discovery ? "Y" : "N");
+  fprintf(stderr,"enable_x20_discovery: %s, enable_x21_recovery: %s\n",
+          enable_x20_discovery ? "Y" : "N", enable_x21_recovery ? "Y" : "N");
   FILE *in= nullptr;
-  if((in = fopen(argv[1], "rb")) == NULL){
-	return -2;
+  // SysUtils invokes us as `/dev/stdin`; keep that path on `read(2)` rather
+  // than stdio `fread`, which can wait for the entire large OMX input buffer.
+  if (filename && strcmp(filename, "-") != 0 &&
+      strcmp(filename, "/dev/stdin") != 0) {
+    if((in = fopen(filename, "rb")) == NULL){
+	  return -2;
+    }
   }
-  insert_eof = argc >=3;
   int ret=video_decode_test(in);
   if(in){
 	fclose(in);
