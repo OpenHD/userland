@@ -61,9 +61,10 @@ jobs:
             LD_LIBRARY_PATH=/opt/vc/lib/arm-linux-gnueabihf \
               /opt/vc/usr/local/bin/openhd_pi_vid --supports-hevc
             install -d /opt/vc/DEBIAN
+            revision=$(printf '%.8s' "$GITHUB_SHA")
             printf '%s\n' \
               'Package: openhd-userland' \
-              "Version: 3.0-evo-$(date -u '+%m%d%H%M')+${GITHUB_SHA:0:8}" \
+              "Version: 3.0-evo-$(date -u '+%m%d%H%M')+$revision" \
               'Architecture: armhf' \
               'Maintainer: OpenHD' \
               'Depends: libraspberrypi0, libavcodec58, libavformat58, libavutil56' \
