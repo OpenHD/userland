@@ -1,11 +1,21 @@
 The video clip test.h264 is (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org
 
-`fpv_video0.bin` accepts an Annex-B H.264 elementary stream from a file or
+`openhd_pi_vid` accepts an Annex-B H.264 elementary stream from a file or
 stdin.  This is compatible with the OpenHD X21/RV1126(B) MPP encoder output
 after RTP depacketization:
 
-    fpv_video0.bin stream.h264
-    cat stream.h264 | fpv_video0.bin -
+    openhd_pi_vid stream.h264
+    cat stream.h264 | openhd_pi_vid -
+
+`fpv_video0.bin` is a compatibility name for the same player.
+
+On Pi 4 and CM4 with FKMS, use `--hevc` for an 8-bit Annex-B H.265 stream:
+
+    openhd_pi_vid --hevc stream.h265
+    cat stream.h265 | openhd_pi_vid --hevc -
+
+H.265 uses the Pi's V4L2 hardware decoder through FFmpeg and presents its
+SAND128 DMA buffers through the firmware video renderer at layer -128.
 
 The old X20 recovery-header probe is opt-in with `--x20`; normal X21/RV1126(B)
 streams should be run without it. `--eof` is available for sources that need

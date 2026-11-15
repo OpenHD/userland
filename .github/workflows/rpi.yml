@@ -55,13 +55,15 @@ jobs:
             rm -Rf /opt/vc/include
             mkdir -p /opt/vc/usr/local/bin/
             mkdir -p /opt/vc/etc/systemd/system
-            cp -r /opt/vc/bin/fpv_video0.bin /opt/vc/usr/local/bin/
+            cp /opt/vc/bin/openhd_pi_vid /opt/vc/usr/local/bin/
+            ln -sf openhd_pi_vid /opt/vc/usr/local/bin/fpv_video0.bin
+            /opt/vc/usr/local/bin/openhd_pi_vid --supports-hevc
             rm -Rf /opt/vc/bin
             mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
             rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
-            fpm -a armhf -s dir -t deb -n openhd-userland -v 3.0-evo-$(date '+%m%d%H%M') -C /opt/vc -p openhd-userland.deb --after-install after-install.sh
+            fpm -a armhf -s dir -t deb -n openhd-userland -v 3.0-evo-$(date '+%m%d%H%M') -C /opt/vc -p openhd-userland.deb --after-install after-install.sh -d libraspberrypi0 -d libavcodec58 -d libavformat58 -d libavutil56
             ls -a
 
     - name: Upload to Github

@@ -91,20 +91,25 @@ static void psc_callback(void *userdata, COMPONENT_T *comp, OMX_U32 data) {
   }
 }
 
-void configure_recovery_header(OMX_BUFFERHEADERTYPE *buf, const char* path,
+bool configure_recovery_header(OMX_BUFFERHEADERTYPE *buf, int input_size, const char* path,
                                const char* label){
-    printf("Applying %s recovery seed\n", label);
     FILE *fp = fopen(path, "rb");
-    assert(fp);
-    fseek(fp, 0L, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-    assert(size>0);
+    if (!fp) {
+        fprintf(stderr, "%s recovery seed unavailable, using stream headers\n", label);
+        return false;
+    }
+    const long size = fseek(fp, 0L, SEEK_END) == 0 ? ftell(fp) : -1;
+    if (size <= 0 || static_cast<unsigned long>(size) > buf->nAllocLen ||
+        fseek(fp, 0L, SEEK_SET) != 0) {
+        fclose(fp);
+        return false;
+    }
     std::vector<uint8_t> tmp_data(size);
-    long read_len=fread(tmp_data.data(), 1, size, fp);
-    assert(read_len==size);
+    const auto read_len = fread(tmp_data.data(), 1, size, fp);
     fclose(fp);
+    if (read_len != static_cast<size_t>(size)) return false;
 
+    const std::vector<uint8_t> original(buf->pBuffer, buf->pBuffer + input_size);
     memcpy(buf->pBuffer,tmp_data.data(),read_len);
 
     buf->nFilledLen = read_len;
@@ -112,7 +117,10 @@ void configure_recovery_header(OMX_BUFFERHEADERTYPE *buf, const char* path,
 
     if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
         fprintf(stderr, "Cannot initialize %s recovery seed\n", label);
+        memcpy(buf->pBuffer, original.data(), original.size());
+        return false;
     }
+    return true;
 }
 
 void util_drop_buffer(OMX_BUFFERHEADERTYPE *buf){
@@ -296,12 +304,11 @@ static int video_decode_test(FILE* in) {
                 const int x20_check=check_for_x20(buf->pBuffer,data_len);
                 if(x20_check==2){
                     // We have an x20
-                    configure_recovery_header(buf, "/usr/local/bin/x20_header.h264",
-                                              "X20");
                     air_unit_discovery_finished= true;
-                    insert_eof= true;
-                    // The recovery seed consumed this OMX input buffer.
-                    continue;
+                    if (configure_recovery_header(buf, data_len, "/usr/local/bin/x20_header.h264", "X20")) {
+                        insert_eof= true;
+                        continue;
+                    }
                 }else if(x20_check==1){
                     // We have no x20 (definitely)
                     air_unit_discovery_finished= true;
@@ -332,12 +339,12 @@ static int video_decode_test(FILE* in) {
 
         if (enable_x21_recovery && !air_unit_discovery_finished &&
             contains_x21_mpp_sps(buf->pBuffer, data_len)) {
-            configure_recovery_header(buf, "/usr/local/bin/x21_header.h264",
-                                      "X21/RV1126B");
             air_unit_discovery_finished = true;
-            insert_eof = true;
-            allow_repeated_port_settings_changes = true;
-            continue;
+            if (configure_recovery_header(buf, data_len, "/usr/local/bin/x21_header.h264", "X21/RV1126B")) {
+                insert_eof = true;
+                allow_repeated_port_settings_changes = true;
+                continue;
+            }
         }
 
 	  //fprintf(stderr, "Got video data %d\n",data_len);
@@ -412,13 +419,30 @@ static int video_decode_test(FILE* in) {
   return status;
 }
 
+#ifdef FPV_HEVC
+#include "fpv_hevc.h"
+#endif
+
 int main(int argc, char **argv) {
+#ifdef FPV_HEVC
+  if (argc == 2 && !strcmp(argv[1], "--supports-hevc")) return 0;
+#endif
   bcm_host_init();
   const char* filename = nullptr;
+  bool hevc = false;
   for (int i = 1; i < argc; ++i) {
     if (!strcmp(argv[i], "--x20")) enable_x20_discovery = true;
     else if (!strcmp(argv[i], "--eof")) insert_eof = true;
+    else if (!strcmp(argv[i], "--hevc")) hevc = true;
     else if (!filename) filename = argv[i];
+  }
+  if (hevc) {
+#ifdef FPV_HEVC
+    return fpv_play_hevc(!filename || !strcmp(filename, "-") ? "/dev/stdin" : filename);
+#else
+    fprintf(stderr, "fpv_video: this build has no H.265 hardware backend\n");
+    return 1;
+#endif
   }
   fprintf(stderr, "video_decode_test-begin\n");
   fprintf(stderr,"enable_x20_discovery: %s, enable_x21_recovery: %s\n",
