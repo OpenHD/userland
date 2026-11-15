@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
     steps:
@@ -26,30 +26,26 @@ jobs:
         remove-android: 'true'
         remove-haskell: 'true'
         overprovision-lvm: 'true'
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
-    - uses: pguyot/arm-runner-action@e1773de1ed6eb61848f5693de824d836f0b0ea25 # v2.6.5
+    - uses: pguyot/arm-runner-action@45f370abd7eed1b20397277e5ec0cb0a31adb026
       id: build_image
       with:
         base_image: raspios_lite:2023-05-03
         image_additional_mb: 4000
         copy_repository_path: /opt
-        copy_artifact_path: userland
+        copy_artifact_path: build_artifacts
         import_github_env: true
         commands: |
-            ls -a
-            
-            cd /opt
-            cd userland
-            sudo apt update
-            bash install_dep.sh
-            mkdir build
-            cd build
-            cmake ..
-            make -j4
-            sudo make install
-            cd ..
+            set -e
+            cd "/opt/$(basename "$GITHUB_REPOSITORY")"
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends build-essential cmake pkg-config \
+              libavcodec-dev libavformat-dev libavutil-dev libdrm-dev
+            cmake -S . -B build -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+            cmake --build build --parallel 4
+            sudo cmake --install build
             rm -Rf /opt/vc/src
             rm -Rf /opt/vc/man
             rm -Rf /opt/vc/include
@@ -63,15 +59,25 @@ jobs:
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
             rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
-            fpm -a armhf -s dir -t deb -n openhd-userland -v 3.0-evo-$(date '+%m%d%H%M') -C /opt/vc -p openhd-userland.deb --after-install after-install.sh -d libraspberrypi0 -d libavcodec58 -d libavformat58 -d libavutil56
-            ls -a
+            install -d /opt/vc/DEBIAN
+            printf '%s\n' \
+              'Package: openhd-userland' \
+              "Version: 3.0-evo-$(date -u '+%m%d%H%M')+${GITHUB_SHA:0:8}" \
+              'Architecture: armhf' \
+              'Maintainer: OpenHD' \
+              'Depends: libraspberrypi0, libavcodec58, libavformat58, libavutil56' \
+              'Description: OpenHD Raspberry Pi userland and video player' \
+              > /opt/vc/DEBIAN/control
+            install -m 0755 after-install.sh /opt/vc/DEBIAN/postinst
+            install -d /opt/build_artifacts
+            dpkg-deb --build --root-owner-group /opt/vc /opt/build_artifacts/openhd-userland.deb
 
     - name: Upload to Github
       uses: 'actions/upload-artifact@v4'
       with:
         name: "userland"
         path: |
-          userland/*.deb
+          build_artifacts/*.deb
         if-no-files-found: error
 
     - name: Push
@@ -86,7 +92,7 @@ jobs:
         distro: "raspbian"
         release: "bullseye"
         republish: "true" # needed ONLY if version is not changing
-        file: "userland/*.deb"
+        file: "build_artifacts/*.deb"
           
       #- name: Install
       #  run: |
