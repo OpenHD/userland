@@ -53,12 +53,13 @@ jobs:
             mkdir -p /opt/vc/etc/systemd/system
             cp /opt/vc/bin/openhd_pi_vid /opt/vc/usr/local/bin/
             ln -sf openhd_pi_vid /opt/vc/usr/local/bin/fpv_video0.bin
-            /opt/vc/usr/local/bin/openhd_pi_vid --supports-hevc
             rm -Rf /opt/vc/bin
             mkdir -p /opt/vc/lib2/arm-linux-gnueabihf
             cp -r /opt/vc/lib/libopenmaxil.so /opt/vc/lib2/arm-linux-gnueabihf
             rm -Rf /opt/vc/lib
             mv /opt/vc/lib2/ /opt/vc/lib/
+            LD_LIBRARY_PATH=/opt/vc/lib/arm-linux-gnueabihf \
+              /opt/vc/usr/local/bin/openhd_pi_vid --supports-hevc
             install -d /opt/vc/DEBIAN
             printf '%s\n' \
               'Package: openhd-userland' \
